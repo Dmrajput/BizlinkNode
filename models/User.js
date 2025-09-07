@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -15,6 +14,13 @@ const userSchema = new mongoose.Schema(
       default: "retailer" 
     },
 
+    // Supplier Reference (Only for Retailers)
+    supplier: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", 
+      required: function() { return this.role === "retailer"; } 
+    },
+
     // Company Information
     companyName: { type: String, required: true },
     companyType: { 
@@ -22,9 +28,9 @@ const userSchema = new mongoose.Schema(
       enum: ["manufacturer", "wholesaler", "distributor", "retailer"], 
       required: true 
     },
-    businessRegNo: { type: String },   // Business Registration Number
-    gstNo: { type: String },           // GST / Tax ID
-    panNo: { type: String },           // PAN or equivalent (for India)
+    businessRegNo: { type: String },
+    gstNo: { type: String },
+    panNo: { type: String },
 
     // Contact Info
     phone: { type: String, required: true },
@@ -41,16 +47,16 @@ const userSchema = new mongoose.Schema(
     bankDetails: {
       accountHolder: String,
       accountNumber: String,
-      ifscCode: String,    // For India; could be SWIFT for international
+      ifscCode: String,
       bankName: String,
       branch: String,
     },
 
     // Business Details
-    categories: [String],  // E.g. ["Electronics", "Clothing"]
-    creditLimit: { type: Number, default: 0 }, // For B2B credit facility
-    rating: { type: Number, default: 0, min: 0, max: 5 }, // Average rating
-    verified: { type: Boolean, default: false }, // Admin verification
+    categories: [String],
+    creditLimit: { type: Number, default: 0 },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    verified: { type: Boolean, default: false },
 
     // Meta
     isActive: { type: Boolean, default: true },
@@ -60,4 +66,3 @@ const userSchema = new mongoose.Schema(
 
 const User = mongoose.model("User", userSchema);
 export default User;
-

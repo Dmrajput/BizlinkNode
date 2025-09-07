@@ -6,7 +6,8 @@ import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import supplierRoutes from "./routes/supplierRoutes.js";
-// import Checkout from "./routes/ordersRoutes.js";
+import cartRoutes from "./routes/OfflinecartRoutes.js";
+import ComplitedOdersRoutes from "./routes/ComplitedOders.js";
 
 dotenv.config();
 connectDB(); // connect to MongoDB
@@ -26,6 +27,8 @@ app.use("/api/cart", supplierRoutes);
 // app.post("api/Order", supplierRoutes);
 app.use("/api/orders", supplierRoutes);
 
+app.use("/api/offlinecart", cartRoutes);
+app.use("/api/complitedoders", ComplitedOdersRoutes);
 
 
 

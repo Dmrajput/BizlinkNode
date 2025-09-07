@@ -5,8 +5,18 @@ import { logToFile } from "../utils/logger.js";
 export const getProducts = async (req, res) => {
   try {
     const { user } = req.params;
+    const { category, supplier, minPrice, maxPrice } = req.query;
+    
+    let query = { user };
+    if (category) query.category = category;
+    if (supplier) query.supplier = supplier;
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
 
-    const products = await Product.find({ user })
+    const products = await Product.find(query)
       .populate("user", "-password -__v -createdAt -updatedAt");
 
     res.json(products);

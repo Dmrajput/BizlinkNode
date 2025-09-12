@@ -1,6 +1,14 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import twilio from "twilio";
+import dotenv from "dotenv";
+dotenv.config();
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+
+const client = twilio(accountSid, authToken);
 
 // Register user (Supplier / Retailer / Admin)
 export const registerUser = async (req, res) => {
@@ -126,6 +134,23 @@ export const getUsers = async (req, res) => {
   }
 };
 
+export const getUserdata = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select("-password"); 
+    // select("-password") removes the password field from response for security
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // ✅ Search suppliers (autocomplete for retailer signup)
 export const searchSuppliers = async (req, res) => {
   try {
@@ -142,5 +167,153 @@ export const searchSuppliers = async (req, res) => {
   } catch (error) {
     console.error("❌ Supplier search error:", error);
     res.status(500).json({ message: "Error searching suppliers" });
+  }
+};
+
+export const updateProfile = async (req, res) => {         
+  try {
+    const { userId } = req.params;
+    const updatedData = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updatedData,
+      { new: true, runValidators: true } // return updated user
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } 
+};
+
+export const updatedPassword = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Compare old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Old password is incorrect" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
+
+
+// In-memory store for OTPs (use Redis in production)
+let otpStore = {};
+
+// Step 1: Send OTP
+export const sendOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ phone });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore[phone] = otp;
+
+    // ✅ WhatsApp Sandbox (Twilio)
+    const message = await client.messages.create({
+      body: `Your OTP code is ${otp}`,
+      from: "whatsapp:+14155238886", // Twilio sandbox number
+      to: `whatsapp:${phone}`,       // Make sure phone is in format +91xxxxxxxxxx
+    });
+
+    console.log("OTP:", otp, " SID:", message.sid);
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Twilio error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// export const sendOtp = async (req, res) => {
+//   try {
+//     const { phone } = req.body;
+
+//     const user = await User.findOne({ phone });
+    
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     otpStore[phone] = otp;
+
+//     // Send via Twilio SMS
+//     await client.messages.create({
+//       body: `Your OTP code is ${otp}`,
+//         to: '+917600829332',
+//         from: '+14155238886',
+//         contentSid: 'HX229f5a04fd0510ce1b071852155d3e75',
+//         contentVariables: '{"1":"409173"}',
+//     });
+//     console.log(otp);
+//     res.json({ message: "OTP sent successfully" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// Step 2: Verify OTP
+export const verifyOtp = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (otpStore[phone] && otpStore[phone] === otp) {
+      res.json({ success: true, message: "OTP verified" });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Step 3: Reset password
+export const resetPassword = async (req, res) => {
+  try {
+    const { phone, otp, newPassword } = req.body;
+
+    if (!otpStore[phone] || otpStore[phone] !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await User.findOneAndUpdate(
+      { phone },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    // clear OTP after success
+    delete otpStore[phone];
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

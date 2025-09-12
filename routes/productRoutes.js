@@ -66,7 +66,19 @@
 
 
 import express from "express";
-import { getProducts, addProduct, updateProduct, deleteProduct } from "../controllers/productController.js";
+
+import {
+  getProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  updateStock, 
+  setStock,
+  lowStockProducts,
+  getStockSummary,
+  addStock,
+  reduceStock,
+} from "../controllers/productController.js";
 
 const router = express.Router();
 
@@ -75,4 +87,10 @@ router.post("/", addProduct);
 router.put("/:id", updateProduct);    // Update by ID
 router.delete("/:id", deleteProduct); 
 
+router.put("/stock/:id", updateStock);   // increment/decrement
+router.put("/stock/set/:id", setStock); // set absolute value
+router.get("/stock/low/:user", lowStockProducts);
+router.get("/stock-summary/:user", getStockSummary);
+router.post("/stock/:id/add", addStock);
+router.post("/stock/:id/reduce", reduceStock);
 export default router;

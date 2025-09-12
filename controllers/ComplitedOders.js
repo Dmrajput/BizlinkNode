@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import ComplitedOders from "../models/ComplitedOrders.js";
+import Product from "../models/Product.js";
+import OfflineCart from "../models/OfflineCart.js";
 // import express from "express";
 import PDFDocument from "pdfkit";
 import fs from "fs";
@@ -17,7 +19,7 @@ export const saveCompletedOrder = async (req, res) => {
     const newOrder = new ComplitedOders({
       userId,
       customerName,
-      items, 
+      items,
       totalAmount,
       status: status || "Pending",
       oderType: oderType || "Online",
@@ -25,8 +27,19 @@ export const saveCompletedOrder = async (req, res) => {
 
     await newOrder.save();
 
+    // 🔑 Update product quantities
+    for (const item of items) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { quantity: -item.qty } }, // reduce stock
+        { new: true }
+      );
+    }
+    // Clear cart after checkout
+    await OfflineCart.findOneAndDelete({ userId: userId });
+
     return res.status(201).json({
-      message: "✅ Order saved successfully",
+      message: "✅ Order saved successfully, stock updated, cart cleared",
       order: newOrder,
     });
   } catch (error) {
@@ -56,7 +69,7 @@ export const saveCompletedOrder = async (req, res) => {
  * 📋 Get all cart items for a user
  */
 export const getUserCart = async (req, res) => {
-console.log("Fetching orders for user:", req.params);
+
     try {
         const orders = await ComplitedOders.find({ userId: req.params.userId })
         .sort({ createdAt: -1 });
@@ -103,7 +116,6 @@ export const clearUserCart = async (req, res) => {
 
 // Get monthly sales summary
 export const getMonthyRecord = async (req, res) => {
-    console.log("Fetching monthly record for user:", req.params);
   try {
     const { userId } = req.params;
 
@@ -227,10 +239,8 @@ export const getSalesSummary = async (req, res) => {
 
 export const generateReport = async (req, res) => {
   try {
-    console.log("Generating report with params:", req.params);
     const { userId } = req.params;
     const { startDate, endDate } = req.query;
-console.log("Report date range:", startDate, "to", endDate);
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
@@ -246,7 +256,7 @@ console.log("Report date range:", startDate, "to", endDate);
       end.setHours(23, 59, 59, 999);
       dateFilter = { createdAt: { $gte: start, $lte: end } };
     }
-console.log("Date filter applied:", dateFilter);
+
     // Fetch summary
     const summary = await ComplitedOders.aggregate([
       { $match: { userId: userObjId, status: "Completed", ...dateFilter } },
@@ -346,7 +356,6 @@ export const exportReportPDF = async (req, res) => {
     stream.on("finish", () => {
       res.download(filePath, fileName, (err) => {
         if (err) {
-          console.log(err);
           res.status(500).json({ message: "Failed to download report" });
         }
         // Optionally delete after download
@@ -358,3 +367,92 @@ export const exportReportPDF = async (req, res) => {
 //     res.status(500).json({ message: "Error generating report" });
 //   }
 };
+
+
+export const getOrdersByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await Order.find({ userId })
+      .populate({
+        path: "items.productId",
+        select: "name brand price image", // only the fields QuickReorder needs
+      })
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const createOrder = async (req, res) => {
+  try {
+    const { userId, items } = req.body;
+
+    if (!userId || !items || items.length === 0) {
+      return res.status(400).json({ message: "Invalid order data" });
+    }
+
+    const newOrder = new Order({
+      userId,
+      items,
+      status: "pending",
+    });
+
+    await newOrder.save();
+
+    res.status(201).json({ message: "Order placed successfully", order: newOrder });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getProfitData = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Fetch all products for this user
+    const products = await Product.find({ user: userId }).lean();
+
+    // Fetch completed orders
+    const orders = await ComplitedOders.find({
+      userId: userId,
+      status: "Completed",
+    }).lean();
+
+    // Map sales per product
+    const soldMap = {};
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        if (!soldMap[item.productId]) {
+          soldMap[item.productId] = { qty: 0, revenue: 0 };
+        }
+        soldMap[item.productId].qty += item.qty;
+        soldMap[item.productId].revenue += item.price * item.qty;
+      });
+    });
+
+    // Merge into product list
+    const data = products.map((p) => {
+      const sold = soldMap[p._id] || { qty: 0, revenue: 0 };
+
+      const totalCost = (p.costPrice || 0) * sold.qty;
+      const totalRevenue = sold.revenue;
+      const profit = totalRevenue - totalCost;
+
+      return {
+        _id: p._id,
+        name: p.name,
+        category: p.category,
+        soldQty: sold.qty,
+        soldRevenue: totalRevenue,
+        profit,
+      };
+    });
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching profit data" });
+  }
+};
+

@@ -41,10 +41,12 @@ router.post("/", async (req, res) => {
 /**
  * 📋 Get all cart items for a user
  */
+
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const items = await OfflineCart.find({ userId }).populate("productId");
+    const items = await OfflineCart.find({ userId })
+      .populate("productId", "name brand");
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,18 +66,18 @@ router.delete("/:userId", async (req, res) => {
   //   res.status(500).json({ error: error.message });
   // }
 
-  try {
+  // try {
     const { userId } = req.params;
     
     if (!userId) return res.status(400).json({ error: "UserId is required" });
 
-    await OfflineCart.deleteMany({ userId });
+    await OfflineCart.deleteMany({ _id:userId });
 
     res.json({ message: "Cart cleared successfully" });
-  } catch (error) {
-    console.error("❌ Error in clearCart:", error.message);
-    res.status(500).json({ error: "Server error: " + error.message });
-  }
+  // } catch (error) {
+  //   console.error("❌ Error in clearCart:", error.message);
+  //   res.status(500).json({ error: "Server error: " + error.message });
+  // }
 
 });
 

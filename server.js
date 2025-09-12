@@ -9,6 +9,8 @@ import supplierRoutes from "./routes/supplierRoutes.js";
 import cartRoutes from "./routes/OfflinecartRoutes.js";
 import ComplitedOdersRoutes from "./routes/ComplitedOders.js";
 import ordersRoutes from "./routes/ordersRoutes.js";
+import stockHistoryRoutes from "./routes/stockHistoryRoutes.js";
+
 
 dotenv.config();
 connectDB(); // connect to MongoDB
@@ -30,7 +32,7 @@ app.use("/api/cart", supplierRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/offlinecart", cartRoutes);
 app.use("/api/complitedoders", ComplitedOdersRoutes);
-
+app.use("/api/stock-history", stockHistoryRoutes);
 
 
 app.get("/", (req, res) => res.send("API is running..."));

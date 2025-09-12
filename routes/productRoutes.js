@@ -78,6 +78,7 @@ import {
   getStockSummary,
   addStock,
   reduceStock,
+  updateStocks,
 } from "../controllers/productController.js";
 
 const router = express.Router();
@@ -85,6 +86,8 @@ const router = express.Router();
 router.get("/:user", getProducts);
 router.post("/", addProduct);
 router.put("/:id", updateProduct);    // Update by ID
+router.put("/update/:id", updateStocks);    // Update by ID
+
 router.delete("/:id", deleteProduct); 
 
 router.put("/stock/:id", updateStock);   // increment/decrement
@@ -93,4 +96,5 @@ router.get("/stock/low/:user", lowStockProducts);
 router.get("/stock-summary/:user", getStockSummary);
 router.post("/stock/:id/add", addStock);
 router.post("/stock/:id/reduce", reduceStock);
+
 export default router;

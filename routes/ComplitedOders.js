@@ -7,6 +7,9 @@ import {
   getSalesSummary,
   generateReport,
   exportReportPDF,
+  getOrdersByUser,
+  createOrder,
+  getProfitData,
 } from "../controllers/ComplitedOders.js";
 
 const router = express.Router();
@@ -30,6 +33,9 @@ router.get("/summary/:userId", getSalesSummary); // Clear all user cart
 router.get("/reports/:userId", generateReport); // Clear all user cart
 router.get("/reports/download/:userId", exportReportPDF); // Clear all user cart
 
+router.get("/reorder:userId", getOrdersByUser);
+router.get("/createOrder:userId", createOrder);
+router.get("/profit/:userId", getProfitData);
 
 // Get monthly sales summary
 // router.get("/monthly/:userId", async (req, res) => {

@@ -1,20 +1,27 @@
 import Product from "../models/Product.js";
 import { logToFile } from "../utils/logger.js";
 import OfflineCart from "../models/OfflineCart.js";
+import StockHistory from "../models/StockHistory.js";
 
 // ================= GET PRODUCTS =================
 export const updateStocks = async (req, res) => {
   try {
     const { id } = req.params;
-    const { addStock = 0, price, costPrice } = req.body;
+    const { addStock = 0, price, costPrice, userId, remarks } = req.body;
 
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    // --- store old values for history ---
+    const oldQuantity = product.quantity || 0;
+    const oldPrice = product.price;
+    const oldCostPrice = product.costPrice;
+
+    // --- update product ---
     if (addStock) {
-      product.quantity = (product.quantity || 0) + Number(addStock);
+      product.quantity = oldQuantity + Number(addStock);
     }
     if (price !== undefined) {
       product.price = Number(price);
@@ -24,13 +31,27 @@ export const updateStocks = async (req, res) => {
     }
 
     await product.save();
+    // --- log stock change ---
+    await StockHistory.create({
+      product: product._id,
+      user: userId, // ✅ pass userId from frontend (who made the change)
+      changeType: addStock > 0 ? "add" : addStock < 0 ? "remove" : "edit",
+      oldQuantity,
+      newQuantity: product.quantity,
+      quantityChanged: Number(addStock),
+      oldCostPrice,
+      newCostPrice: product.costPrice,
+      oldSellingPrice: oldPrice,
+      newSellingPrice: product.price,
+      remarks: remarks || "",
+    });
 
     res.status(200).json({
       message: "Product updated successfully",
       product,
     });
   } catch (err) {
-    console.error("Error updating product:", err);
+    console.error("❌ Error updating product:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

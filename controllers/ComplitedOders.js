@@ -9,7 +9,7 @@ import path from "path";
 
 export const saveCompletedOrder = async (req, res) => {
   try {
-    const { userId, customerName, items, totalAmount, status, oderType } = req.body;
+    const { userId, customerName, items, totalAmount, status, oderType, mobileNumber } = req.body;
 
     if (!userId || !customerName || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Invalid order data" });
@@ -19,6 +19,7 @@ export const saveCompletedOrder = async (req, res) => {
     const newOrder = new ComplitedOders({
       userId,
       customerName,
+      mobileNumber,
       items,
       totalAmount,
       status: status || "Pending",
@@ -69,22 +70,19 @@ export const saveCompletedOrder = async (req, res) => {
  * 📋 Get all cart items for a user
  */
 export const getUserCart = async (req, res) => {
-
-    try {
-        const orders = await ComplitedOders.find({ userId: req.params.userId })
-        .sort({ createdAt: -1 });
-        res.json(orders);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-//   try {
-//     const { userId } = req.params;
-//     const items = await ComplitedOders.find({ userId }).populate("productId");
-//     res.json(items);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
+  try {
+    const orders = await ComplitedOders.find({ userId: req.params.userId })
+      .populate({
+        path: "items.productId", // populate product info
+        select: "name brand price", // only fetch these fields
+      })
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
+
 
 /**
  * ❌ Remove single item

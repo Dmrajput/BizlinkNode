@@ -11,7 +11,8 @@ const orderItemSchema = new mongoose.Schema({
 const complitedOrderSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
-    customerName: { type: String, required: true },
+    customerName: { type: String },
+    mobileNumber: { type: String },
     items: [orderItemSchema], // 👈 store array of products
     totalAmount: { type: Number, required: true },
     status: {

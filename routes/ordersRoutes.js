@@ -1,25 +1,22 @@
-// import express from "express";
-// import {
-//   browseProducts,
-//   getCart,
-//   addToCart,
-//   updateCartItem,
-//   removeFromCart,
-//   checkout
-// } from "../controllers/supplierController.js";
+import express from "express";
+import {
+  getOrdersByUser,
+  Checkout,
+  getUserOrders
+} from "../controllers/ordersController.js";
 
-// const router = express.Router();
+const router = express.Router();
 
-// // Products
+// Products
 // router.get("/products", browseProducts);
 
-// // Cart
+// Cart
 // router.get("/cart/:userId", getCart);
 // router.post("/cart", addToCart);
-// router.put("/cart/:userId", updateCartItem);
+router.get("/:userId", getOrdersByUser);
+router.post("/:userId/:supplierId", Checkout);
+router.get("/user/:userId", getUserOrders);   // ✅ get all orders for user
 // router.delete("/cart/:userId/:productId", removeFromCart);
-
-// // Checkout
 // router.post("/checkout/:userId", checkout);
 
-// export default router;
+export default router;

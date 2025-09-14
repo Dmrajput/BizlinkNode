@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
       city: String,
       state: String,
       country: String,
-      postalCode: String,
+      pincode: String,
     },
 
     // Banking / Payment Details

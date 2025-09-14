@@ -3,9 +3,13 @@ import StockHistory from "../models/StockHistory.js";
 
 export const getAllStockHistory = async (req, res) => {
   try {
+    const { userId } = req.params;
     const { startDate, endDate } = req.query;
-
     const filter = {};
+    
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
 
     if (startDate && endDate) {
       filter.createdAt = {

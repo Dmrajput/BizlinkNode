@@ -405,6 +405,56 @@ export const createOrder = async (req, res) => {
   }
 };
 
+// export const getProfitData = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     // Fetch all products for this user
+//     const products = await Product.find({ user: userId }).lean();
+
+//     // Fetch completed orders
+//     const orders = await ComplitedOders.find({
+//       userId: userId,
+//       status: "Completed",
+//     }).lean();
+
+//     // Map sales per product
+//     const soldMap = {};
+//     orders.forEach((order) => {
+//       order.items.forEach((item) => {
+//         if (!soldMap[item.productId]) {
+//           soldMap[item.productId] = { qty: 0, revenue: 0 };
+//         }
+//         soldMap[item.productId].qty += item.qty;
+//         soldMap[item.productId].revenue += item.price * item.qty;
+//       });
+//     });
+
+//     // Merge into product list
+//     const data = products.map((p) => {
+//       const sold = soldMap[p._id] || { qty: 0, revenue: 0 };
+
+//       const totalCost = (p.costPrice || 0) * sold.qty;
+//       const totalRevenue = sold.revenue;
+//       const profit = totalRevenue - totalCost;
+
+//       return {
+//         _id: p._id,
+//         name: p.name,
+//         category: p.category,
+//         soldQty: sold.qty,
+//         soldRevenue: totalRevenue,
+//         profit,
+//       };
+//     });
+//     res.json(data);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Error fetching profit data" });
+//   }
+// };
+
+
 export const getProfitData = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -442,6 +492,8 @@ export const getProfitData = async (req, res) => {
         _id: p._id,
         name: p.name,
         category: p.category,
+        costPrice: p.costPrice || 0,
+        sellingPrice: p.price || 0,
         soldQty: sold.qty,
         soldRevenue: totalRevenue,
         profit,
@@ -453,4 +505,3 @@ export const getProfitData = async (req, res) => {
     res.status(500).json({ message: "Error fetching profit data" });
   }
 };
-

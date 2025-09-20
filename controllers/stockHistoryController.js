@@ -10,7 +10,7 @@ export const getAllStockHistory = async (req, res) => {
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
     }
-
+    filter.user = userId;
     if (startDate && endDate) {
       filter.createdAt = {
         $gte: new Date(startDate),

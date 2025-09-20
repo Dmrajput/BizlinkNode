@@ -1,8 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import bodyParser from "body-parser";
-import connectDB from "./config/db.js";
+import connectDB from "./config/db.js"; // Mongoose connection
+
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import supplierRoutes from "./routes/supplierRoutes.js";
@@ -13,14 +13,18 @@ import stockHistoryRoutes from "./routes/stockHistoryRoutes.js";
 
 
 dotenv.config();
-connectDB(); // connect to MongoDB
+
+// Connect to MongoDB (Mongoose)
+connectDB();
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 
-app.use(express.json());           // built-in JSON parser
-app.use(bodyParser.urlencoded({ extended: true }));
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*", // restrict in production
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/products", productRoutes);
@@ -34,8 +38,20 @@ app.use("/api/offlinecart", cartRoutes);
 app.use("/api/complitedoders", ComplitedOdersRoutes);
 app.use("/api/stock-history", stockHistoryRoutes);
 
+// Health check routes
+app.get("/ping", (req, res) => res.status(200).send("pong 🏓"));
 
-app.get("/", (req, res) => res.send("API is running..."));
+app.get("/health", async (req, res) => {
+  const mongoose = await import("mongoose"); // dynamic import
+  if (mongoose.connection.readyState === 1) {
+    res.status(200).json({ status: "ok", db: "connected" });
+  } else {
+    res.status(500).json({ status: "error", db: "disconnected" });
+  }
+});
+
+// Default route
+app.get("/", (req, res) => res.send("🚀 API is running..."));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

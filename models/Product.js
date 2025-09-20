@@ -19,6 +19,7 @@ const productSchema = new mongoose.Schema(
 
     brand: { type: String },
     sku: { type: String, unique: true }, // product code
+    size : { type: String },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
 
     // Reference to user (supplier/retailer)

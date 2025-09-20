@@ -2,6 +2,8 @@
 
 import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
+import ComplitedOders from "../models/ComplitedOrders.js";
+import RetailerProductsStock from "../models/RetailerStock.js"
 
 export const getOrdersByUser = async (req, res) => {
   try {
@@ -67,6 +69,7 @@ export const Checkout = async (req, res) => {
       items: cart.items.map((i) => ({
         product: i.product._id,
         quantity: i.quantity,
+        price: i.product.price,
       })),
       totalPrice,
     });
@@ -129,7 +132,7 @@ export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status, userId } = req.body; // userId is supplier performing action
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate("items.product");
     if (!order) return res.status(404).json({ message: "Order not found" });
 
     // Handle "Reject" → directly update
@@ -145,9 +148,9 @@ export const updateOrderStatus = async (req, res) => {
 
     // Handle "Accept" → move to Processing
     if (status === "Accepted") {
-      order.status = "Accepted";
+      order.status = "Processing";
       order.statusHistory.push({
-        status: "Accepted",
+        status: status,
         updatedBy: userId,
       });
       await order.save();
@@ -160,10 +163,10 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     // Optional: allow manual status update to Processing / Shipped / Delivered
-    const allowedNextStatus = ["Processing","Shipped","Delivered"];
-    if (!allowedNextStatus.includes(status)) {
-      return res.status(400).json({ message: "Invalid status update" });
-    }
+    // const allowedNextStatus = ["Processing","Shipped","Delivered"];
+    // if (!allowedNextStatus.includes(status)) {
+    //   return res.status(400).json({ message: "Invalid status update" });
+    // }
 
     order.status = status;
     order.statusHistory.push({
@@ -172,19 +175,75 @@ export const updateOrderStatus = async (req, res) => {
     });
 
     await order.save();
+    
      // If Delivered, save in DeliveredOrders collection
     if (status === "Delivered") {
-      const deliveredOrderData = {
-        originalOrderId: order._id,
-        userId: order.userId,
-        supplierId: userId,
-        products: order.products,
-        totalAmount: order.totalAmount,
-        statusHistory: order.statusHistory,
-        deliveredAt: new Date(),
-      };
+      // const deliveredOrderData = {
+      //   originalOrderId: order._id,
+      //   userId: order.userId,
+      //   supplierId: userId,
+      //   products: order.products,
+      //   totalAmount: order.totalAmount,
+      //   statusHistory: order.statusHistory,
+      //   deliveredAt: new Date(),
+      // };
 
-      await DeliveredOrder.create(deliveredOrderData);
+      // await DeliveredOrder.create(deliveredOrderData);
+
+      // 2️⃣ Save item-wise in RetailerProductsStock
+      const retailerStockData = order.items.map((item) => ({
+        productId: item.product,
+        productName: item.product?.name || item.name || "Unknown Product",
+        quantity: item.quantity,
+        category: item.product?.category || "Uncategorized",
+        size: item.product.size,
+        price: item.price,
+        retailerId: order.retailer,
+        supplierId: order.supplier,
+        orderId: order._id,
+        deliveredAt: new Date(),
+      }));
+
+      await RetailerProductsStock.insertMany(retailerStockData);
+
+      order.status = "Delivered";
+      order.statusHistory.push({
+        status: status,
+        updatedBy: userId,
+      });
+
+      await order.save();
+      const completedItems = [];
+      let totalAmount = 0;
+      order.items.forEach((item) => {
+        const qty = item.quantity;
+        const price = item.price;
+        const total = price * qty;
+
+        completedItems.push({
+          productId: item.product,
+          qty,
+          price,
+          total,
+        });
+
+        totalAmount += total;
+      });
+
+        var customerName ='online';
+        var mobileNumber = 0;
+        // Create new completed order document
+        const newOrder = new ComplitedOders({
+          userId,
+          customerName,
+          mobileNumber,
+          items:completedItems,
+          totalAmount,
+          status: "Completed",
+          oderType: "Offline",
+        });
+    
+        await newOrder.save();
     }
     
     res.json({ message: `Order status updated to ${status}`, order });

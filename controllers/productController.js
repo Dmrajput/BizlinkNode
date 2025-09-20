@@ -116,6 +116,7 @@ export const addProduct = async (req, res) => {
       quantity,
       unit,
       brand,
+      size,
       sku,
       status,
       loggedInUserId,
@@ -137,6 +138,7 @@ export const addProduct = async (req, res) => {
       quantity,
       unit,
       brand,
+      size,
       sku,
       status,
       user: loggedInUserId,
@@ -165,6 +167,7 @@ export const updateProduct = async (req, res) => {
       quantity,
       unit,
       brand,
+      size,
       sku,
       status,
     } = req.body;
@@ -178,6 +181,7 @@ export const updateProduct = async (req, res) => {
       quantity,
       unit,
       brand,
+      size,
       sku,
       status,
     };

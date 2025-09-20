@@ -156,9 +156,10 @@ export const updateOrderStatus = async (req, res) => {
       await order.save();
 
       // Optional: automatically move to Processing → Shipped → Delivered
-      setTimeout(async () => {
-        await advanceOrderStatus(order._id);
-      }, 5000); // 5 seconds for demo, replace with actual logic
+      // setTimeout(async () => {
+      //   await advanceOrderStatus(order._id);
+      // }, 5000); // 5 seconds for demo, replace with actual logic
+      
       return res.json({ message: "Order accepted and progressing", order });
     }
 
@@ -235,6 +236,7 @@ export const updateOrderStatus = async (req, res) => {
         // Create new completed order document
         const newOrder = new ComplitedOders({
           userId,
+          retailerId:order.retailer,
           customerName,
           mobileNumber,
           items:completedItems,

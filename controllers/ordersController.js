@@ -2,7 +2,7 @@
 
 import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
-import ComplitedOders from "../models/ComplitedOrders.js";
+import CompletedOrders  from "../models/CompletedOrders.js";
 import RetailerProductsStock from "../models/RetailerStock.js"
 
 export const getOrdersByUser = async (req, res) => {
@@ -234,7 +234,7 @@ export const updateOrderStatus = async (req, res) => {
         var customerName ='online';
         var mobileNumber = 0;
         // Create new completed order document
-        const newOrder = new ComplitedOders({
+        const newOrder = new CompletedOrders ({
           userId,
           retailerId:order.retailer,
           customerName,

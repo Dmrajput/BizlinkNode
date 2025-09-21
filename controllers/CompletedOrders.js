@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import ComplitedOders from "../models/ComplitedOrders.js";
+import CompletedOrders  from "../models/CompletedOrders.js";
 import Product from "../models/Product.js";
 import OfflineCart from "../models/OfflineCart.js";
 // import express from "express";
@@ -16,7 +16,7 @@ export const saveCompletedOrder = async (req, res) => {
     }
 
     // Create new completed order document
-    const newOrder = new ComplitedOders({
+    const newOrder = new CompletedOrders ({
       userId,
       customerName,
       mobileNumber,
@@ -69,9 +69,57 @@ export const saveCompletedOrder = async (req, res) => {
 /**
  * 📋 Get all cart items for a user
  */
+// export const getUserCart = async (req, res) => {
+//   try {
+//     const orders = await CompletedOrders.find({ userId: req.params.userId })
+//       .populate({
+//         path: "items.productId", // populate product info
+//         select: "name brand price", // only fetch these fields
+//       })
+//       .sort({ createdAt: -1 });
+//     res.json(orders);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 export const getUserCart = async (req, res) => {
   try {
-    const orders = await ComplitedOders.find({ userId: req.params.userId })
+    const { startDate, endDate, limit } = req.query;
+    const { userId } = req.params;
+
+    let filter = { userId };
+
+    // Apply date filter if both dates are provided
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    // Convert limit to number, default to 30
+    const recordLimit = parseInt(limit) || 30;
+
+    const orders = await CompletedOrders.find(filter)
+      .populate({
+        path: "items.productId", // populate product info
+        select: "name brand price", // only fetch these fields
+      })
+      .sort({ createdAt: -1 })
+      .limit(recordLimit);
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+export const getRetailerData = async (req, res) => {
+  try {
+    const orders = await CompletedOrders.find({ retailerId: req.params.retailerId })
       .populate({
         path: "items.productId", // populate product info
         select: "name brand price", // only fetch these fields
@@ -90,7 +138,7 @@ export const getUserCart = async (req, res) => {
 export const removeCartItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await ComplitedOders.findByIdAndDelete(id);
+    const deleted = await CompletedOrders.findByIdAndDelete(id);
     if (!deleted) return res.status(404).json({ error: "Item not found" });
     res.json({ message: "Item removed", deleted });
   } catch (error) {
@@ -104,7 +152,7 @@ export const removeCartItem = async (req, res) => {
 export const clearUserCart = async (req, res) => {
   try {
     const { userId } = req.params;
-    await ComplitedOders.deleteMany({ userId });
+    await CompletedOrders.deleteMany({ userId });
     res.json({ message: "Cart cleared" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -117,7 +165,7 @@ export const getMonthyRecord = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const sales = await ComplitedOders.aggregate([
+    const sales = await CompletedOrders.aggregate([
       { $match: { userId: new mongoose.Types.ObjectId(userId), status: "Completed" } },
       {
         $group: {
@@ -151,7 +199,7 @@ export const getSalesSummary = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todaySales = await ComplitedOders.aggregate([
+    const todaySales = await CompletedOrders.aggregate([
       {
         $match: {
           userId: userObjId,
@@ -174,7 +222,7 @@ export const getSalesSummary = async (req, res) => {
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Sunday
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const weeklySales = await ComplitedOders.aggregate([
+    const weeklySales = await CompletedOrders.aggregate([
       {
         $match: {
           userId: userObjId,
@@ -198,7 +246,7 @@ export const getSalesSummary = async (req, res) => {
     }));
 
     // ---------- Monthly Sales ----------
-    const monthlySales = await ComplitedOders.aggregate([
+    const monthlySales = await CompletedOrders.aggregate([
       { $match: { userId: userObjId, status: "Completed" } },
       {
         $group: {
@@ -256,7 +304,7 @@ export const generateReport = async (req, res) => {
     }
 
     // Fetch summary
-    const summary = await ComplitedOders.aggregate([
+    const summary = await CompletedOrders.aggregate([
       { $match: { userId: userObjId, status: "Completed", ...dateFilter } },
       {
         $group: {
@@ -268,7 +316,7 @@ export const generateReport = async (req, res) => {
     ]);
 
     // Daily breakdown (optional)
-    const dailyBreakdown = await ComplitedOders.aggregate([
+    const dailyBreakdown = await CompletedOrders.aggregate([
       { $match: { userId: userObjId, status: "Completed", ...dateFilter } },
       {
         $group: {
@@ -304,7 +352,7 @@ export const exportReportPDF = async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
 
     // Fetch completed orders in date range
-    const orders = await ComplitedOders.find({
+    const orders = await CompletedOrders.find({
       userId,
       status: "Completed",
       createdAt: { $gte: start, $lte: end },
@@ -413,7 +461,7 @@ export const createOrder = async (req, res) => {
 //     const products = await Product.find({ user: userId }).lean();
 
 //     // Fetch completed orders
-//     const orders = await ComplitedOders.find({
+//     const orders = await CompletedOrders.find({
 //       userId: userId,
 //       status: "Completed",
 //     }).lean();
@@ -454,35 +502,44 @@ export const createOrder = async (req, res) => {
 //   }
 // };
 
-
 export const getProfitData = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { startDate, endDate } = req.query;
 
-    // Fetch all products for this user
+    // Base filter
+    let filter = { userId, status: "Completed" };
+console.log(startDate)
+    // Apply date filter if given
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    // Fetch all products owned by this user
     const products = await Product.find({ user: userId }).lean();
 
-    // Fetch completed orders
-    const orders = await ComplitedOders.find({
-      userId: userId,
-      status: "Completed",
-    }).lean();
+    // Fetch completed orders (filtered)
+    const orders = await CompletedOrders.find(filter).lean();
 
-    // Map sales per product
+    // Aggregate sales data
     const soldMap = {};
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        if (!soldMap[item.productId]) {
-          soldMap[item.productId] = { qty: 0, revenue: 0 };
+        const pid = item.productId.toString();
+        if (!soldMap[pid]) {
+          soldMap[pid] = { qty: 0, revenue: 0 };
         }
-        soldMap[item.productId].qty += item.qty;
-        soldMap[item.productId].revenue += item.price * item.qty;
+        soldMap[pid].qty += item.qty;
+        soldMap[pid].revenue += item.price * item.qty;
       });
     });
 
-    // Merge into product list
+    // Merge product data with sales
     const data = products.map((p) => {
-      const sold = soldMap[p._id] || { qty: 0, revenue: 0 };
+      const sold = soldMap[p._id.toString()] || { qty: 0, revenue: 0 };
 
       const totalCost = (p.costPrice || 0) * sold.qty;
       const totalRevenue = sold.revenue;
@@ -499,9 +556,62 @@ export const getProfitData = async (req, res) => {
         profit,
       };
     });
+
     res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error("❌ getProfitData error:", err);
     res.status(500).json({ message: "Error fetching profit data" });
   }
 };
+
+
+// export const getProfitData = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     // Fetch all products for this user
+//     const products = await Product.find({ user: userId }).lean();
+
+//     // Fetch completed orders
+//     const orders = await CompletedOrders.find({
+//       userId: userId,
+//       status: "Completed",
+//     }).lean();
+
+//     // Map sales per product
+//     const soldMap = {};
+//     orders.forEach((order) => {
+//       order.items.forEach((item) => {
+//         if (!soldMap[item.productId]) {
+//           soldMap[item.productId] = { qty: 0, revenue: 0 };
+//         }
+//         soldMap[item.productId].qty += item.qty;
+//         soldMap[item.productId].revenue += item.price * item.qty;
+//       });
+//     });
+
+//     // Merge into product list
+//     const data = products.map((p) => {
+//       const sold = soldMap[p._id] || { qty: 0, revenue: 0 };
+
+//       const totalCost = (p.costPrice || 0) * sold.qty;
+//       const totalRevenue = sold.revenue;
+//       const profit = totalRevenue - totalCost;
+
+//       return {
+//         _id: p._id,
+//         name: p.name,
+//         category: p.category,
+//         costPrice: p.costPrice || 0,
+//         sellingPrice: p.price || 0,
+//         soldQty: sold.qty,
+//         soldRevenue: totalRevenue,
+//         profit,
+//       };
+//     });
+//     res.json(data);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Error fetching profit data" });
+//   }
+// };

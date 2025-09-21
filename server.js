@@ -7,7 +7,7 @@ import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import supplierRoutes from "./routes/supplierRoutes.js";
 import cartRoutes from "./routes/OfflinecartRoutes.js";
-import ComplitedOdersRoutes from "./routes/ComplitedOders.js";
+import ComplitedOdersRoutes from "./routes/CompletedOrders.js";
 import ordersRoutes from "./routes/ordersRoutes.js";
 import stockHistoryRoutes from "./routes/stockHistoryRoutes.js";
 import Retailerstock from "./routes/RetailerStock.js"

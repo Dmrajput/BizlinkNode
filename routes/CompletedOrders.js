@@ -10,13 +10,14 @@ import {
   getOrdersByUser,
   createOrder,
   getProfitData,
-} from "../controllers/ComplitedOders.js";
+  getRetailerData,
+} from "../controllers/CompletedOrders.js";
 
 const router = express.Router();
 
 // router.get("/:userId", async (req, res) => {
 //   try {
-//     const orders = await ComplitedOders.find({ userId: req.params.userId })
+//     const orders = await CompletedOrders.find({ userId: req.params.userId })
 //       .sort({ createdAt: -1 });
 //     res.json(orders);
 //   } catch (err) {
@@ -27,6 +28,8 @@ const router = express.Router();
 
 router.post("/", saveCompletedOrder);       // Add / Update item
 router.get("/:userId", getUserCart);         // Get user cart
+router.get("/retailer/:retailerId", getRetailerData);         // Get user cart
+
 router.delete("/:id", removeCartItem);       // Delete one item
 router.delete("/user/:userId", clearUserCart); // Clear all user cart
 router.get("/summary/:userId", getSalesSummary); // Clear all user cart
@@ -42,7 +45,7 @@ router.get("/profit/:userId", getProfitData);
 //   try {
 //     const { userId } = req.params;
 
-//     const sales = await ComplitedOders.aggregate([
+//     const sales = await CompletedOrders.aggregate([
 //       { $match: { userId: new mongoose.Types.ObjectId(userId), status: "Completed" } },
 //       {
 //         $group: {

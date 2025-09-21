@@ -30,4 +30,4 @@ const complitedOrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("ComplitedOders", complitedOrderSchema);
+export default mongoose.model("CompletedOrders", complitedOrderSchema);

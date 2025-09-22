@@ -10,36 +10,38 @@ import cartRoutes from "./routes/OfflinecartRoutes.js";
 import ComplitedOdersRoutes from "./routes/CompletedOrders.js";
 import ordersRoutes from "./routes/ordersRoutes.js";
 import stockHistoryRoutes from "./routes/stockHistoryRoutes.js";
-import Retailerstock from "./routes/RetailerStock.js"
-
+import Retailerstock from "./routes/RetailerStock.js";
 
 dotenv.config();
 
-// Connect to MongoDB (Mongoose)
+// Connect to MongoDB
 connectDB();
 
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "*", // restrict in production
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "*", // In production, set to your frontend domain
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
-// app.use("/api/suppliers", supplierRoutes);
-app.use("/api/cart", supplierRoutes);
-// app.post("api/Order", supplierRoutes);
-// app.use("/api/orders", supplierRoutes);
+app.use("/api/suppliers", supplierRoutes);
+app.use("/api/cart", cartRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/offlinecart", cartRoutes);
 app.use("/api/complitedoders", ComplitedOdersRoutes);
 app.use("/api/stock-history", stockHistoryRoutes);
 app.use("/api/rstock", Retailerstock);
-// Health check routes
+
+// Health check
 app.get("/ping", (req, res) => res.status(200).send("pong 🏓"));
 
 app.get("/health", async (req, res) => {
@@ -52,7 +54,7 @@ app.get("/health", async (req, res) => {
 });
 
 // Default route
-app.get("/", (req, res) => res.send("🚀 API is running..."));
+app.get("/", (req, res) => res.send("🚀 BizLink API is running..."));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

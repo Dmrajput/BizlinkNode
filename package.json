@@ -1,16 +1,19 @@
 {
   "name": "myapp-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend API for BizLink mobile app",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["BizLink", "backend", "API", "Express", "MongoDB"],
+  "author": "Divyaraj",
   "license": "ISC",
+  "engines": {
+    "node": ">=18 <21"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",

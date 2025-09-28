@@ -18,7 +18,7 @@ const productSchema = new mongoose.Schema(
     unit: { type: String, default: "pcs" }, // pcs, kg, liter, etc.
 
     brand: { type: String },
-    sku: { type: String, unique: true }, // product code
+    sku: { type: String, unique: true, sparse: true, trim: true},
     size : { type: String },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
 

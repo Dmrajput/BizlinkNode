@@ -509,7 +509,7 @@ export const getProfitData = async (req, res) => {
 
     // Base filter
     let filter = { userId, status: "Completed" };
-console.log(startDate)
+
     // Apply date filter if given
     if (startDate && endDate) {
       filter.createdAt = {
@@ -537,25 +537,26 @@ console.log(startDate)
       });
     });
 
-    // Merge product data with sales
-    const data = products.map((p) => {
-      const sold = soldMap[p._id.toString()] || { qty: 0, revenue: 0 };
+    // ✅ Merge only products with soldQty > 0
+    const data = products
+      .filter((p) => soldMap[p._id.toString()] && soldMap[p._id.toString()].qty > 0)
+      .map((p) => {
+        const sold = soldMap[p._id.toString()];
+        const totalCost = (p.costPrice || 0) * sold.qty;
+        const totalRevenue = sold.revenue;
+        const profit = totalRevenue - totalCost;
 
-      const totalCost = (p.costPrice || 0) * sold.qty;
-      const totalRevenue = sold.revenue;
-      const profit = totalRevenue - totalCost;
-
-      return {
-        _id: p._id,
-        name: p.name,
-        category: p.category,
-        costPrice: p.costPrice || 0,
-        sellingPrice: p.price || 0,
-        soldQty: sold.qty,
-        soldRevenue: totalRevenue,
-        profit,
-      };
-    });
+        return {
+          _id: p._id,
+          name: p.name,
+          category: p.category,
+          costPrice: p.costPrice || 0,
+          sellingPrice: p.price || 0,
+          soldQty: sold.qty,
+          soldRevenue: totalRevenue,
+          profit,
+        };
+      });
 
     res.json(data);
   } catch (err) {

@@ -11,6 +11,7 @@ import ComplitedOdersRoutes from "./routes/CompletedOrders.js";
 import ordersRoutes from "./routes/ordersRoutes.js";
 import stockHistoryRoutes from "./routes/stockHistoryRoutes.js";
 import Retailerstock from "./routes/RetailerStock.js";
+import membershipRoutes from "./routes/membershipRoutes.js";
 
 dotenv.config();
 
@@ -40,6 +41,8 @@ app.use("/api/offlinecart", cartRoutes);
 app.use("/api/complitedoders", ComplitedOdersRoutes);
 app.use("/api/stock-history", stockHistoryRoutes);
 app.use("/api/rstock", Retailerstock);
+app.use("/api/membership", membershipRoutes);
+
 
 // Health check
 app.get("/ping", (req, res) => res.status(200).send("pong 🏓"));

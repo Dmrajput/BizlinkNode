@@ -241,7 +241,7 @@ export const sendOtp = async (req, res) => {
       to: `whatsapp:${phone}`,       // Make sure phone is in format +91xxxxxxxxxx
     });
 
-    console.log("OTP:", otp, " SID:", message.sid);
+    console.log("Number",phone,"OTP:", otp, " SID:", message.sid);
 
     res.json({ message: "OTP sent successfully" });
   } catch (error) {

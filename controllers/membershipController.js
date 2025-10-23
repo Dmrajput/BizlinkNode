@@ -41,7 +41,7 @@ export const getMembershipStatus = async (req, res) => {
     const membership = await Membership.findOne({ userId });
     if (!membership) {
         res.status(200).json({
-            status:'no_membership',
+            status:true,
         });
         return;
     }

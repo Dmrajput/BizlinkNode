@@ -31,10 +31,10 @@ const membershipSchema = new mongoose.Schema({
 
 // ✅ Method to auto-check if membership expired
 membershipSchema.methods.checkStatus = function () {
-  if (new Date() > this.endDate) {
-    this.isActive = false;
-    return "expired";
-  }
+  // if (new Date() > this.endDate) {
+  //   this.isActive = false;
+  //   return "expired";
+  // }
   return this.isActive ? "active" : "inactive";
 };
 

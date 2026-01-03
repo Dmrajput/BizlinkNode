@@ -317,3 +317,33 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+
+    const users = await User.find().sort({ createdAt: -1 });
+
+    // Include password ONLY for admin users
+    const filteredUsers = users.map(user => {
+      const userObj = user.toObject();
+
+      if (userObj.role !== "admin") {
+        delete userObj.password;
+      }
+
+      return userObj;
+    });
+
+    res.status(200).json({
+      success: true,
+      totalUsers: filteredUsers.length,
+      users: filteredUsers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
